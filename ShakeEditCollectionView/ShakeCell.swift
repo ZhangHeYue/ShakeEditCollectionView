@@ -72,11 +72,17 @@ class ShakeCell: UICollectionViewCell {
     }
     
     private func startShake() {
-    
+        let animation =  CAKeyframeAnimation(keyPath: "transform.rotation.z")
+        animation.values = [2 / self.frame.width, -2 / self.frame.width]
+        animation.duration = 0.3
+        animation.isAdditive = true
+        animation.autoreverses = true
+        animation.repeatCount = Float.infinity
+        self.layer.add(animation, forKey: "shake")
     }
     
     private func stopShake() {
-        
+        self.layer.removeAnimation(forKey: "shake")
     }
     
     func setText(text: String) {

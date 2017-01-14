@@ -12,7 +12,7 @@ import SnapKit
 class ViewController: UIViewController {
     
     private let shakeLayout = ShakeLayout()
-    private var collectionView: UICollectionView! = nil
+    fileprivate var collectionView: UICollectionView! = nil
     private let editButton = UIButton()
 
     fileprivate var isEdit: Bool = false {
@@ -44,6 +44,10 @@ class ViewController: UIViewController {
         collectionView.dataSource = self
         view.addSubview(collectionView)
         
+        let longPress = UILongPressGestureRecognizer(target: self, action:#selector(self.handleLongGesture(gesture:)))
+        longPress.minimumPressDuration = 0.30
+        collectionView.addGestureRecognizer(longPress)
+        
         editButton.setTitle("编辑", for: .normal)
         editButton.setTitle("完成", for: .selected)
         editButton.setTitleColor(UIColor.black, for: .normal)
@@ -70,7 +74,30 @@ class ViewController: UIViewController {
         editButton.isSelected = !editButton.isSelected
         isEdit = !isEdit
     }
+    
+    fileprivate func deleteData(byText text: String) {
+        originData = originData.filter { $0 != text }
+        collectionView.reloadData()
+    }
 
+    func handleLongGesture(gesture: UILongPressGestureRecognizer) {
+        if !isEdit {
+            return
+        }
+        switch gesture.state {
+        case .began:
+            guard let selectedIndexPath = self.collectionView.indexPathForItem(at: gesture.location(in: self.collectionView)) else{ break }
+            self.collectionView.beginInteractiveMovementForItem(at: selectedIndexPath)
+        case .changed:
+            self.collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: gesture.view))
+        case .ended:
+            self.collectionView.endInteractiveMovement()
+            self.collectionView.collectionViewLayout.invalidateLayout()
+        default:
+            self.collectionView.cancelInteractiveMovement()
+        }
+    }
+    
 }
 
 extension ViewController: UICollectionViewDelegate {
@@ -80,7 +107,7 @@ extension ViewController: UICollectionViewDelegate {
         cell.setText(text: originData[indexPath.row])
         cell.observeDelete { [weak self] text in
             guard let strongSelf = self else { return }
-            strongSelf.originData = strongSelf.originData.filter { $0 != text }
+            strongSelf.deleteData(byText: text)
         }
         return cell
     }
@@ -95,6 +122,10 @@ extension ViewController: UICollectionViewDelegate {
             cell.stopEdit()
         }
     }
+    
+    func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
+        return true
+    }
 }
 
 extension ViewController: UICollectionViewDataSource {
@@ -105,6 +136,12 @@ extension ViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return originData.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        let item = originData[sourceIndexPath.item]
+        originData.remove(at: sourceIndexPath.item)
+        originData.insert(item, at: destinationIndexPath.item)
     }
     
 }
