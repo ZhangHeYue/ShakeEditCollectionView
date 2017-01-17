@@ -21,11 +21,7 @@ class ViewController: UIViewController {
         }
     }
     
-    fileprivate var originData: [String] = ["Bring", "the", "power", "of", "Swift", "functional", "programming", "to iOS", "Web", "macOS", "watchOS", "and", "tvOS", "application", "development"] {
-        didSet {
-            collectionView.reloadData()
-        }
-    }
+    fileprivate var originData = ["Bring", "the", "power", "of", "Swift", "functional", "programming", "to iOS", "Web", "macOS", "watchOS", "and", "tvOS", "application", "development"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -86,16 +82,20 @@ class ViewController: UIViewController {
         }
         switch gesture.state {
         case .began:
-            guard let selectedIndexPath = self.collectionView.indexPathForItem(at: gesture.location(in: self.collectionView)) else{ break }
-            self.collectionView.beginInteractiveMovementForItem(at: selectedIndexPath)
+            guard let selectedIndexPath = collectionView.indexPathForItem(at: gesture.location(in: collectionView)) else { break }
+            collectionView.beginInteractiveMovementForItem(at: selectedIndexPath)
         case .changed:
-            self.collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: gesture.view))
+            collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: gesture.view))
         case .ended:
-            self.collectionView.endInteractiveMovement()
-            self.collectionView.collectionViewLayout.invalidateLayout()
+            collectionView.endInteractiveMovement()
         default:
-            self.collectionView.cancelInteractiveMovement()
+            collectionView.cancelInteractiveMovement()
         }
+    }
+    
+    fileprivate func calTextSize(text: String) -> CGSize {
+        let width = text.size(attributes: [NSFontAttributeName : UIFont.systemFont(ofSize: 14)]).width
+        return CGSize(width: width + 10, height: 30)
     }
     
 }
@@ -139,11 +139,17 @@ extension ViewController: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        let item = originData[sourceIndexPath.item]
-        originData.remove(at: sourceIndexPath.item)
-        originData.insert(item, at: destinationIndexPath.item)
+        collectionView.collectionViewLayout.invalidateLayout()
     }
     
+    func collectionView(_ collectionView: UICollectionView, targetIndexPathForMoveFromItemAt originalIndexPath: IndexPath, toProposedIndexPath proposedIndexPath: IndexPath) -> IndexPath {
+        if originalIndexPath == proposedIndexPath {
+            return proposedIndexPath
+        }
+        let item = originData.remove(at: originalIndexPath.item)
+        originData.insert(item, at: proposedIndexPath.item)
+        return proposedIndexPath
+    }
 }
 
 extension ViewController: UICollectionViewDelegateFlowLayout {
@@ -154,5 +160,12 @@ extension ViewController: UICollectionViewDelegateFlowLayout {
         return CGSize(width: width + 10, height: 30)
     }
     
+    
+    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: IndexPath) -> CGSize {
+        guard let cell = collectionView.cellForItem(at: indexPath) as? ShakeCell else {
+            return calTextSize(text: originData[indexPath.row])
+        }
+        cell.setText(text: originData[indexPath.row])
+        return calTextSize(text: originData[indexPath.row])
+    }
 }
-

@@ -26,4 +26,5 @@ class ShakeLayout: UICollectionViewFlowLayout {
         }
         return attrs
     }
+    
 }
